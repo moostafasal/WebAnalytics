@@ -1,0 +1,6 @@
+@WebAnalytics.API_HostAddress = http://localhost:5282
+
+GET {{WebAnalytics.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
