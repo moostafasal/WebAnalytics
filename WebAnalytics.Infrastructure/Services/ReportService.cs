@@ -10,6 +10,7 @@ namespace WebAnalytics.Infrastructure.Services
     {
         Task<OverviewReport> GetOverviewReportAsync();
         Task<List<PageReport>> GetPageReportsAsync();
+
         Task<object> GetHealthMetricsAsync();
     }
 
