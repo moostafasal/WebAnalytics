@@ -13,7 +13,7 @@ namespace WebAnalytics.Core.DTOs
         public int Users { get; set; }
         public int Sessions { get; set; }
         public int Views { get; set; }
-        public decimal PerformanceScore { get; set; }
+        public double PerformanceScore { get; set; }
         public int LCPms { get; set; }
     }
 }
