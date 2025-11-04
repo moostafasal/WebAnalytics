@@ -2,7 +2,38 @@ version: '3.8'
 
 services:
 
-  
+  # 🐘 PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: analytics-postgres
+
+    # متغيرات البيئة (Environment Variables)
+    environment:
+      - POSTGRES_USER=admin                
+      - POSTGRES_PASSWORD=YourStrong@Passw0rd123  
+      - POSTGRES_DB=AnalyticsDB             
+
+    # (Ports)
+    ports:
+      - "5432:5432"
+
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d AnalyticsDB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+   
+    networks:
+      - analytics-network
+
+ 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: analytics-rabbitmq
@@ -10,8 +41,8 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin123
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # للـ AMQP Protocol 
+      - "15672:15672"  # للـ Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -19,51 +50,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - analytics-network
 
-  api:
-    build:
-      context: .
-      dockerfile: WebAnalytics.API/Dockerfile
-    container_name: analytics-api
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Data Source=/app/data/analytics.db
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
-      - JWT__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong123456
-    ports:
-      - "5000:80"
-    volumes:
-      - sqlite-data:/app/data  
-    depends_on:
-      - rabbitmq
-    networks:
-      - analytics-network
-
-  consumer:
-    build:
-      context: .
-      dockerfile: WebAnalytics.Consumer/Dockerfile
-    container_name: analytics-consumer
-    environment:
-      - ConnectionStrings__DefaultConnection=Data Source=/app/data/analytics.db
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
-    volumes:
-      - sqlite-data:/app/data   
-    depends_on:
-      - rabbitmq
-    networks:
-      - analytics-network
-
+# Volumes 
 volumes:
-  sqlite-data:  
+  postgres-data:
   rabbitmq-data:
 
+#Networks 
 networks:
   analytics-network:
     driver: bridge
