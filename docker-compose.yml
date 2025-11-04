@@ -1,28 +1,8 @@
 version: '3.8'
 
 services:
-  # SQL Server Database
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: analytics-sqlserver
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
-      - MSSQL_PID=Developer
-    ports:
-      - "1433:1433"
-    volumes:
-      - sqlserver-data:/var/opt/mssql
-    healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" || exit 1
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-    networks:
-      - analytics-network
 
-  # RabbitMQ Message Broker
+  
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: analytics-rabbitmq
@@ -30,8 +10,8 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin123
     ports:
-      - "5672:5672"   # AMQP port
-      - "15672:15672" # Management UI
+      - "5672:5672"
+      - "15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -39,61 +19,49 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
     networks:
       - analytics-network
 
-  # API Service
   api:
     build:
       context: .
       dockerfile: WebAnalytics.API/Dockerfile
     container_name: analytics-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AnalyticsDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/analytics.db
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
       - JWT__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong123456
-      - JWT__Issuer=WebAnalyticsAPI
-      - JWT__Audience=WebAnalyticsClient
-      - JWT__ExpiryMinutes=60
     ports:
       - "5000:80"
+    volumes:
+      - sqlite-data:/app/data  
     depends_on:
-      sqlserver:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
     networks:
       - analytics-network
 
-  # Consumer Background Service
   consumer:
     build:
       context: .
       dockerfile: WebAnalytics.Consumer/Dockerfile
     container_name: analytics-consumer
     environment:
-      - DOTNET_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AnalyticsDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/analytics.db
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
-      - RabbitMQ__RetryAttempts=3
-      - RabbitMQ__RetryDelaySeconds=5
+    volumes:
+      - sqlite-data:/app/data   
     depends_on:
-      sqlserver:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
     networks:
       - analytics-network
 
 volumes:
-  sqlserver-data:
+  sqlite-data:  
   rabbitmq-data:
 
 networks:
