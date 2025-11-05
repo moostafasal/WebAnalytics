@@ -1,21 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace WebAnalytics.Infrastructure.MessageBroker
 {
     public class RabbitMQService : IDisposable
     {
         private readonly IConnection _connection;
-        private readonly RabbitMQ.Client.IModel _channel;
+        private readonly IModel _channel;
         private readonly ILogger<RabbitMQService> _logger;
 
         public RabbitMQService(IConfiguration configuration, ILogger<RabbitMQService> logger)
@@ -25,22 +20,28 @@ namespace WebAnalytics.Infrastructure.MessageBroker
             var factory = new ConnectionFactory()
             {
                 HostName = configuration["RabbitMQ:Host"] ?? "localhost",
-                UserName = configuration["RabbitMQ:Username"] ?? "admin",
-                Password = configuration["RabbitMQ:Password"] ?? "admin123",
-
+                UserName = configuration["RabbitMQ:Username"] ?? "guest",
+                Password = configuration["RabbitMQ:Password"] ?? "guest",
+                Port = 5672
             };
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
 
             SetupInfrastructure();
-            _logger.LogInformation("✅ Connected to RabbitMQ and infrastructure created");
+            _logger.LogInformation("Connected to RabbitMQ and infrastructure created");
         }
 
         private void SetupInfrastructure()
         {
-            // Main Exchange
-            _channel.ExchangeDeclare("analytics.raw", ExchangeType.Fanout, durable: true);
+            // Direct Exchange instead of Fanout
+            _channel.ExchangeDeclare(
+                exchange: "analytics.raw",
+                type: ExchangeType.Direct,
+                durable: true,
+                autoDelete: false,
+                arguments: null
+            );
 
             // Main Queue with DLQ settings
             var args = new Dictionary<string, object>
@@ -48,37 +49,49 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                 { "x-dead-letter-exchange", "analytics.dlq" }
             };
 
-            _channel.QueueDeclare("analytics.raw.q", durable: true, exclusive: false, autoDelete: false, arguments: args);
-            _channel.QueueBind("analytics.raw.q", "analytics.raw", "");
+            _channel.QueueDeclare(
+                queue: "analytics.raw.q",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: args
+            );
+
+            // Bind queue with routing key
+            _channel.QueueBind(
+                queue: "analytics.raw.q",
+                exchange: "analytics.raw",
+                routingKey: "analytics.data"
+            );
+
+            // Dead Letter Exchange
+            _channel.ExchangeDeclare(
+                exchange: "analytics.dlq",
+                type: ExchangeType.Direct,
+                durable: true,
+                autoDelete: false,
+                arguments: null
+            );
 
             // Dead Letter Queue
-            _channel.QueueDeclare("analytics.dlq", durable: true, exclusive: false, autoDelete: false);
+            _channel.QueueDeclare(
+                queue: "analytics.dlq",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
 
-            _logger.LogInformation("✅ Created queues: analytics.raw.q and analytics.dlq");
+            // Bind DLQ
+            _channel.QueueBind(
+                queue: "analytics.dlq",
+                exchange: "analytics.dlq",
+                routingKey: "analytics.data"
+            );
+
+            _logger.LogInformation("Created Direct exchange and queues with routing keys");
         }
 
-        //public void PublishMessage<T>(T message)
-        //{
-        //    try
-        //    {
-        //        var jsonMessage = JsonSerializer.Serialize(message);
-        //        var body = Encoding.UTF8.GetBytes(jsonMessage);
-
-        //        _channel.BasicPublish(
-        //            exchange: "analytics.raw",
-        //            routingKey: "",
-        //            basicProperties: null,
-        //            body: body
-        //        );
-
-        //        _logger.LogInformation($"📤 Sent message: {typeof(T).Name}");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "❌ Failed to send message to RabbitMQ");
-        //        throw;
-        //    }
-        //}
         public void PublishMessage<T>(T message)
         {
             try
@@ -96,18 +109,22 @@ namespace WebAnalytics.Infrastructure.MessageBroker
 
                 var body = Encoding.UTF8.GetBytes(jsonMessage);
 
+                var properties = _channel.CreateBasicProperties();
+                properties.Persistent = true;
+
                 _channel.BasicPublish(
                     exchange: "analytics.raw",
-                    routingKey: "",
-                    basicProperties: null,
+                    routingKey: "analytics.data",
+                    mandatory: false,
+                    basicProperties: properties,
                     body: body
                 );
 
-                _logger.LogInformation($"Sent message: {typeof(T).Name}");
+                _logger.LogInformation($"Sent message with routing key: analytics.data");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, " Failed to send message to RabbitMQ");
+                _logger.LogError(ex, "Failed to send message to RabbitMQ");
                 throw;
             }
         }
@@ -127,20 +144,24 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                 {
                     await messageHandler(message);
                     _channel.BasicAck(ea.DeliveryTag, false);
-                    _logger.LogInformation(" Successfully processed and acknowledged message");
+                    _logger.LogInformation("Successfully processed and acknowledged message");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, " Failed to process message, sending to DLQ");
+                    _logger.LogError(ex, "Failed to process message, sending to DLQ");
                     _channel.BasicNack(ea.DeliveryTag, false, false);
 
-                    // Send to DLQ
                     await SendToDLQ(message, ex.Message);
                 }
             };
 
-            _channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
-            _logger.LogInformation($" Started listening to queue: {queueName}");
+            _channel.BasicConsume(
+                queue: queueName,
+                autoAck: false,
+                consumer: consumer
+            );
+
+            _logger.LogInformation($"Started listening to queue: {queueName}");
         }
 
         private async Task SendToDLQ(string originalMessage, string error)
@@ -157,19 +178,38 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                 var message = JsonSerializer.Serialize(dlqMessage);
                 var body = Encoding.UTF8.GetBytes(message);
 
-                _channel.BasicPublish("", "analytics.dlq", null, body);
-                _logger.LogWarning($" Sent failed message to DLQ: {error}");
+                var properties = _channel.CreateBasicProperties();
+                properties.Persistent = true;
+
+                _channel.BasicPublish(
+                    exchange: "analytics.dlq",
+                    routingKey: "analytics.data",
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: body
+                );
+
+                _logger.LogWarning($"Sent failed message to DLQ: {error}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, " Failed to send message to DLQ");
+                _logger.LogError(ex, "Failed to send message to DLQ");
             }
         }
 
         public void Dispose()
         {
-            _channel?.Close();
-            _connection?.Close();
+            try
+            {
+                _channel?.Close();
+                _connection?.Close();
+                _channel?.Dispose();
+                _connection?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disposing RabbitMQ connections");
+            }
         }
     }
 }
