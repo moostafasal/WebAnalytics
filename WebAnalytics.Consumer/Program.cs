@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebAnalytics.Consumer;
 using WebAnalytics.Infrastructure.Data;
+using WebAnalytics.Infrastructure.IServices;
 using WebAnalytics.Infrastructure.MessageBroker;
 using WebAnalytics.Infrastructure.Services;
 

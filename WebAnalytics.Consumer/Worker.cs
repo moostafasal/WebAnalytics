@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using System.Text.Json;
 using WebAnalytics.Core.DTOs;
+using WebAnalytics.Infrastructure.IServices;
 using WebAnalytics.Infrastructure.MessageBroker;
 using WebAnalytics.Infrastructure.Services;
 

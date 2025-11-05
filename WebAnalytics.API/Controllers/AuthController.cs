@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebAnalytics.Core.DTOs;
+using WebAnalytics.Infrastructure.IServices;
 using WebAnalytics.Infrastructure.Services;
 
 namespace WebAnalytics.API.Controllers
