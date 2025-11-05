@@ -85,7 +85,6 @@ namespace WebAnalytics.Infrastructure.MessageBroker
             {
                 string jsonMessage;
 
-                // 👇 لو اللي جاي أصلاً String (يعني JSON جاهز)، ما نعملوش Serialize تاني
                 if (message is string strMessage)
                 {
                     jsonMessage = strMessage;
@@ -104,11 +103,11 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                     body: body
                 );
 
-                _logger.LogInformation($"📤 Sent message: {typeof(T).Name}");
+                _logger.LogInformation($"Sent message: {typeof(T).Name}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Failed to send message to RabbitMQ");
+                _logger.LogError(ex, " Failed to send message to RabbitMQ");
                 throw;
             }
         }
@@ -122,17 +121,17 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
 
-                _logger.LogInformation($"📥 Received message from {queueName}");
+                _logger.LogInformation($"Received message from {queueName}");
 
                 try
                 {
                     await messageHandler(message);
                     _channel.BasicAck(ea.DeliveryTag, false);
-                    _logger.LogInformation("✅ Successfully processed and acknowledged message");
+                    _logger.LogInformation(" Successfully processed and acknowledged message");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "❌ Failed to process message, sending to DLQ");
+                    _logger.LogError(ex, " Failed to process message, sending to DLQ");
                     _channel.BasicNack(ea.DeliveryTag, false, false);
 
                     // Send to DLQ
@@ -141,7 +140,7 @@ namespace WebAnalytics.Infrastructure.MessageBroker
             };
 
             _channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
-            _logger.LogInformation($"👂 Started listening to queue: {queueName}");
+            _logger.LogInformation($" Started listening to queue: {queueName}");
         }
 
         private async Task SendToDLQ(string originalMessage, string error)
@@ -159,11 +158,11 @@ namespace WebAnalytics.Infrastructure.MessageBroker
                 var body = Encoding.UTF8.GetBytes(message);
 
                 _channel.BasicPublish("", "analytics.dlq", null, body);
-                _logger.LogWarning($"📮 Sent failed message to DLQ: {error}");
+                _logger.LogWarning($" Sent failed message to DLQ: {error}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Failed to send message to DLQ");
+                _logger.LogError(ex, " Failed to send message to DLQ");
             }
         }
 
