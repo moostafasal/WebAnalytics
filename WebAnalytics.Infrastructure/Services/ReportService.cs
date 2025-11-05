@@ -10,7 +10,6 @@ namespace WebAnalytics.Infrastructure.Services
     {
         Task<OverviewReport> GetOverviewReportAsync();
         Task<List<PageReport>> GetPageReportsAsync();
-
         Task<object> GetHealthMetricsAsync();
     }
 
@@ -31,6 +30,13 @@ namespace WebAnalytics.Infrastructure.Services
             {
                 var dailyStats = await _context.DailyStats.ToListAsync();
 
+                _logger.LogInformation($"📅 Found {dailyStats.Count} DailyStats records in DB");
+
+                if (!dailyStats.Any())
+                {
+                    _logger.LogWarning("⚠️ No DailyStats data found!");
+                }
+
                 var overview = new OverviewReport
                 {
                     TotalUsers = dailyStats.Sum(ds => ds.TotalUsers),
@@ -40,7 +46,7 @@ namespace WebAnalytics.Infrastructure.Services
                     GeneratedAt = DateTime.UtcNow
                 };
 
-                _logger.LogInformation("📊 Generated overview report");
+                _logger.LogInformation("✅ Overview report generated successfully.");
                 return overview;
             }
             catch (Exception ex)
@@ -54,6 +60,21 @@ namespace WebAnalytics.Infrastructure.Services
         {
             try
             {
+                var total = await _context.RawData.CountAsync();
+                _logger.LogInformation($"📦 Found {total} RawData records in DB");
+
+                if (total == 0)
+                {
+                    _logger.LogWarning("⚠️ No RawData records found, returning empty report list.");
+                    return new List<PageReport>();
+                }
+
+                var sampleData = await _context.RawData.Take(3).ToListAsync();
+                foreach (var row in sampleData)
+                {
+                    _logger.LogInformation($"🧩 Sample => Page: {row.Page}, Users: {row.Users}, Sessions: {row.Sessions}, Views: {row.Views}, Perf: {row.PerformanceScore}");
+                }
+
                 var pageStats = await _context.RawData
                     .GroupBy(r => r.Page)
                     .Select(g => new PageReport
@@ -67,7 +88,7 @@ namespace WebAnalytics.Infrastructure.Services
                     })
                     .ToListAsync();
 
-                _logger.LogInformation($"📄 Generated page reports ({pageStats.Count} pages)");
+                _logger.LogInformation($"📄 Generated {pageStats.Count} page reports successfully.");
                 return pageStats;
             }
             catch (Exception ex)
@@ -91,6 +112,7 @@ namespace WebAnalytics.Infrastructure.Services
                     LastUpdated = DateTime.UtcNow
                 };
 
+                _logger.LogInformation("🩺 Health metrics fetched successfully.");
                 return metrics;
             }
             catch (Exception ex)

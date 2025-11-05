@@ -27,22 +27,29 @@ namespace WebAnalytics.Infrastructure.Services
         {
             try
             {
-                // Check for duplicate data
+                // ✅ Ensure date is stored as UTC
+                message.Date = message.Date.Kind == DateTimeKind.Utc
+                    ? message.Date
+                    : message.Date.ToUniversalTime();
+
+                var dateOnly = message.Date.Date;
+
+                // ✅ Check for duplicate based on date-only
                 var exists = await _context.RawData
-                    .AnyAsync(r => r.Page == message.Page && r.Date == message.Date);
+                    .AnyAsync(r => r.Page == message.Page && r.Date.Date == dateOnly);
 
                 if (!exists)
                 {
                     var rawData = new RawData
                     {
-                        Date = message.Date,
+                        Date = dateOnly, // already UTC normalized
                         Page = message.Page,
                         Users = message.Users,
                         Sessions = message.Sessions,
                         Views = message.Views,
                         PerformanceScore = message.PerformanceScore,
                         LCPms = message.LCPms,
-                        ReceivedAt = DateTime.UtcNow
+                        ReceivedAt = DateTime.UtcNow // always UTC
                     };
 
                     await _context.RawData.AddAsync(rawData);
@@ -51,11 +58,11 @@ namespace WebAnalytics.Infrastructure.Services
                 }
                 else
                 {
-                    _logger.LogInformation($"ℹ️ Page data {message.Page} already exists");
+                    _logger.LogInformation($"ℹ️ Page data {message.Page} already exists for {dateOnly:yyyy-MM-dd}");
                 }
 
                 // Update daily statistics
-                await UpdateDailyStatsAsync(message.Date);
+                await UpdateDailyStatsAsync(dateOnly);
             }
             catch (Exception ex)
             {

@@ -1,82 +1,126 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 using WebAnalytics.Core.DTOs;
 using WebAnalytics.Infrastructure.MessageBroker;
 
 namespace WebAnalytics.Infrastructure.Services
 {
-    namespace WebAnalytics.Infrastructure.Services
+    public interface IDataIngestionService
     {
-        public interface IDataIngestionService
+        Task<bool> IngestFromJsonFilesAsync(string gaFilePath, string psiFilePath);
+    }
+
+    public class DataIngestionService : IDataIngestionService
+    {
+        private readonly RabbitMQService _rabbitMQService;
+        private readonly ILogger<DataIngestionService> _logger;
+
+        public DataIngestionService(RabbitMQService rabbitMQService, ILogger<DataIngestionService> logger)
         {
-            Task<bool> IngestFromJsonFilesAsync(string gaFilePath, string psiFilePath);
+            _rabbitMQService = rabbitMQService;
+            _logger = logger;
         }
 
-        public class DataIngestionService : IDataIngestionService
+        public async Task<bool> IngestFromJsonFilesAsync(string gaFilePath, string psiFilePath)
         {
-            private readonly RabbitMQService _rabbitMQService;
-            private readonly ILogger<DataIngestionService> _logger;
-
-            public DataIngestionService(RabbitMQService rabbitMQService, ILogger<DataIngestionService> logger)
+            try
             {
-                _rabbitMQService = rabbitMQService;
-                _logger = logger;
-            }
+                _logger.LogInformation("Starting data ingestion from JSON files");
 
-            public async Task<bool> IngestFromJsonFilesAsync(string gaFilePath, string psiFilePath)
-            {
-                try
+                var gaData = await ReadJsonFileAsync<List<GoogleAnalyticsData>>(gaFilePath);
+                var psiData = await ReadJsonFileAsync<List<PageSpeedData>>(psiFilePath);
+
+                _logger.LogInformation("Loaded {GaCount} GA records and {PsiCount} PSI records",
+                    gaData?.Count ?? 0, psiData?.Count ?? 0);
+
+                var combinedRecords = CombineData(gaData, psiData);
+
+                _logger.LogInformation("Preparing to send {Count} messages to RabbitMQ", combinedRecords.Count);
+
+                var jsonOptions = new JsonSerializerOptions
                 {
-                    _logger.LogInformation("🚀 Starting data ingestion from JSON files");
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                };
 
-                    // Read JSON files
-                    var gaData = await ReadJsonFileAsync<List<GoogleAnalyticsData>>(gaFilePath);
-                    var psiData = await ReadJsonFileAsync<List<PageSpeedData>>(psiFilePath);
-
-                    // Combine data
-                    var combinedRecords = CombineData(gaData, psiData);
-
-                    // Send each record to RabbitMQ
-                    foreach (var record in combinedRecords)
+                foreach (var record in combinedRecords)
+                {
+                    try
                     {
-                        _rabbitMQService.PublishMessage(record);
-                        _logger.LogInformation($"📤 Sent page data: {record.Page}");
+                        var message = JsonSerializer.Serialize(record, jsonOptions);
+                        _rabbitMQService.PublishMessage(message);
+                        _logger.LogInformation("Sent: {Page} - {Date:yyyy-MM-dd}", record.Page, record.Date);
                     }
-
-                    _logger.LogInformation($"✅ Successfully sent {combinedRecords.Count} records");
-                    return true;
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send: {Page}", record.Page);
+                    }
                 }
-                catch (Exception ex)
+
+                _logger.LogInformation("Successfully sent {Count} records", combinedRecords.Count);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Data ingestion failed");
+                return false;
+            }
+        }
+        private async Task<T> ReadJsonFileAsync<T>(string filePath)
+        {
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"File not found: {filePath}");
+
+            var json = await File.ReadAllTextAsync(filePath);
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
+
+            var result = JsonSerializer.Deserialize<T>(json, options);
+
+            if (result == null)
+                throw new InvalidDataException($"Invalid JSON in file: {filePath}");
+
+            return result;
+        }
+
+        private List<AnalyticsMessage> CombineData(List<GoogleAnalyticsData> gaData, List<PageSpeedData> psiData)
+        {
+            var combined = new List<AnalyticsMessage>();
+
+            if (gaData == null || psiData == null)
+                return combined;
+
+            foreach (var ga in gaData)
+            {
+                if (ga == null) continue;
+
+                if (string.IsNullOrWhiteSpace(ga.Date) || string.IsNullOrWhiteSpace(ga.Page))
                 {
-                    _logger.LogError(ex, "❌ Data ingestion failed");
-                    return false;
+                    _logger.LogWarning("Skipping invalid GA record: Date='{Date}', Page='{Page}'", ga.Date, ga.Page);
+                    continue;
                 }
-            }
 
-            private async Task<T> ReadJsonFileAsync<T>(string filePath)
-            {
-                var json = await File.ReadAllTextAsync(filePath);
-                return JsonSerializer.Deserialize<T>(json) ?? throw new Exception($"Invalid file: {filePath}");
-            }
+                var psi = psiData.FirstOrDefault(p =>
+                    p != null &&
+                    !string.IsNullOrWhiteSpace(p.Date) &&
+                    !string.IsNullOrWhiteSpace(p.Page) &&
+                    p.Date.Trim() == ga.Date.Trim() &&
+                    p.Page.Trim() == ga.Page.Trim());
 
-            private List<AnalyticsMessage> CombineData(List<GoogleAnalyticsData> gaData, List<PageSpeedData> psiData)
-            {
-                var combined = new List<AnalyticsMessage>();
-
-                foreach (var ga in gaData)
+                if (psi != null)
                 {
-                    var psi = psiData.FirstOrDefault(p => p.Page == ga.Page && p.Date == ga.Date);
-                    if (psi != null)
+                    if (DateTime.TryParse(ga.Date.Trim(), out DateTime parsedDate))
                     {
                         combined.Add(new AnalyticsMessage
                         {
-                            Page = ga.Page,
-                            Date = DateTime.Parse(ga.Date),
+                            Page = ga.Page.Trim(),
+                            Date = parsedDate,
                             Users = ga.Users,
                             Sessions = ga.Sessions,
                             Views = ga.Views,
@@ -84,10 +128,17 @@ namespace WebAnalytics.Infrastructure.Services
                             LCPms = psi.LCP_ms
                         });
                     }
+                    else
+                    {
+                        _logger.LogWarning("Failed to parse date: '{Date}' for page: {Page}", ga.Date, ga.Page);
+                    }
                 }
-
-                return combined;
             }
+
+            _logger.LogInformation("Combined {Count} records from {GaCount} GA and {PsiCount} PSI records",
+                combined.Count, gaData.Count, psiData.Count);
+
+            return combined;
         }
     }
 }

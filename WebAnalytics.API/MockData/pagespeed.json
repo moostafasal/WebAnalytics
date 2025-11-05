@@ -1,72 +1,72 @@
 [
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/home",
     "performanceScore": 0.92,
     "LCP_ms": 1850
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/products",
     "performanceScore": 0.88,
     "LCP_ms": 2100
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/about",
     "performanceScore": 0.95,
     "LCP_ms": 1600
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/contact",
     "performanceScore": 0.90,
     "LCP_ms": 1900
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/home",
     "performanceScore": 0.91,
     "LCP_ms": 1900
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/products",
     "performanceScore": 0.87,
     "LCP_ms": 2150
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/about",
     "performanceScore": 0.94,
     "LCP_ms": 1650
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/contact",
     "performanceScore": 0.89,
     "LCP_ms": 1950
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/home",
     "performanceScore": 0.93,
     "LCP_ms": 1800
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/products",
     "performanceScore": 0.86,
     "LCP_ms": 2200
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/about",
     "performanceScore": 0.96,
     "LCP_ms": 1550
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/contact",
     "performanceScore": 0.91,
     "LCP_ms": 1850

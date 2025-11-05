@@ -25,8 +25,9 @@ namespace WebAnalytics.Infrastructure.MessageBroker
             var factory = new ConnectionFactory()
             {
                 HostName = configuration["RabbitMQ:Host"] ?? "localhost",
-                UserName = configuration["RabbitMQ:Username"] ?? "guest",
-                Password = configuration["RabbitMQ:Password"] ?? "guest"
+                UserName = configuration["RabbitMQ:Username"] ?? "admin",
+                Password = configuration["RabbitMQ:Password"] ?? "admin123",
+
             };
 
             _connection = factory.CreateConnection();
@@ -56,11 +57,44 @@ namespace WebAnalytics.Infrastructure.MessageBroker
             _logger.LogInformation("✅ Created queues: analytics.raw.q and analytics.dlq");
         }
 
+        //public void PublishMessage<T>(T message)
+        //{
+        //    try
+        //    {
+        //        var jsonMessage = JsonSerializer.Serialize(message);
+        //        var body = Encoding.UTF8.GetBytes(jsonMessage);
+
+        //        _channel.BasicPublish(
+        //            exchange: "analytics.raw",
+        //            routingKey: "",
+        //            basicProperties: null,
+        //            body: body
+        //        );
+
+        //        _logger.LogInformation($"📤 Sent message: {typeof(T).Name}");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "❌ Failed to send message to RabbitMQ");
+        //        throw;
+        //    }
+        //}
         public void PublishMessage<T>(T message)
         {
             try
             {
-                var jsonMessage = JsonSerializer.Serialize(message);
+                string jsonMessage;
+
+                // 👇 لو اللي جاي أصلاً String (يعني JSON جاهز)، ما نعملوش Serialize تاني
+                if (message is string strMessage)
+                {
+                    jsonMessage = strMessage;
+                }
+                else
+                {
+                    jsonMessage = JsonSerializer.Serialize(message);
+                }
+
                 var body = Encoding.UTF8.GetBytes(jsonMessage);
 
                 _channel.BasicPublish(

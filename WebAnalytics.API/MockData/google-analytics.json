@@ -1,83 +1,83 @@
 [
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/home",
     "users": 120,
     "sessions": 150,
     "views": 310
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/products",
     "users": 95,
     "sessions": 110,
     "views": 245
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/about",
     "users": 65,
     "sessions": 75,
     "views": 180
   },
   {
-    "date": "2025-10-20",
+    "date": "2025-10-20T00:00:00Z",
     "page": "/contact",
     "users": 45,
     "sessions": 50,
     "views": 125
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/home",
     "users": 135,
     "sessions": 165,
     "views": 340
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/products",
     "users": 105,
     "sessions": 125,
     "views": 280
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/about",
     "users": 70,
     "sessions": 85,
     "views": 195
   },
   {
-    "date": "2025-10-21",
+    "date": "2025-10-21T00:00:00Z",
     "page": "/contact",
     "users": 50,
     "sessions": 60,
     "views": 140
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/home",
     "users": 145,
     "sessions": 175,
     "views": 365
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/products",
     "users": 115,
     "sessions": 135,
     "views": 295
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/about",
     "users": 75,
     "sessions": 90,
     "views": 210
   },
   {
-    "date": "2025-10-22",
+    "date": "2025-10-22T00:00:00Z",
     "page": "/contact",
     "users": 55,
     "sessions": 65,

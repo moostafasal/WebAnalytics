@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebAnalytics.Infrastructure.Services;
-using WebAnalytics.Infrastructure.Services.WebAnalytics.Infrastructure.Services;
 
 namespace WebAnalytics.API.Controllers
 {
