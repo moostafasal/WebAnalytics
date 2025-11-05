@@ -3,15 +3,11 @@ using Microsoft.Extensions.Logging;
 using WebAnalytics.Core.DTOs;
 using WebAnalytics.Core.Entities;
 using WebAnalytics.Infrastructure.Data;
+using WebAnalytics.Infrastructure.IServices;
 
 namespace WebAnalytics.Infrastructure.Services
 {
-    public interface IReportService
-    {
-        Task<OverviewReport> GetOverviewReportAsync();
-        Task<List<PageReport>> GetPageReportsAsync();
-        Task<object> GetHealthMetricsAsync();
-    }
+
 
     public class ReportService : IReportService
     {

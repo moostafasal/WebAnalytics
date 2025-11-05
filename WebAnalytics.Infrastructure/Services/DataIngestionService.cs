@@ -2,14 +2,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebAnalytics.Core.DTOs;
+using WebAnalytics.Infrastructure.IServices;
 using WebAnalytics.Infrastructure.MessageBroker;
 
 namespace WebAnalytics.Infrastructure.Services
 {
-    public interface IDataIngestionService
-    {
-        Task<bool> IngestFromJsonFilesAsync(string gaFilePath, string psiFilePath);
-    }
 
     public class DataIngestionService : IDataIngestionService
     {

@@ -3,14 +3,11 @@ using Microsoft.Extensions.Logging;
 using WebAnalytics.Core.DTOs;
 using WebAnalytics.Core.Entities;
 using WebAnalytics.Infrastructure.Data;
+using WebAnalytics.Infrastructure.IServices;
 
 namespace WebAnalytics.Infrastructure.Services
 {
-    public interface IAnalyticsService
-    {
-        Task ProcessAnalyticsMessageAsync(AnalyticsMessage message);
-        Task UpdateDailyStatsAsync(DateTime date);
-    }
+
 
     public class AnalyticsService : IAnalyticsService
     {

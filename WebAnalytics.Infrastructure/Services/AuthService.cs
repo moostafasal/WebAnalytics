@@ -12,14 +12,11 @@ using System.Threading.Tasks;
 using WebAnalytics.Core.DTOs;
 using WebAnalytics.Core.Entities;
 using WebAnalytics.Infrastructure.Data;
+using WebAnalytics.Infrastructure.IServices;
 
 namespace WebAnalytics.Infrastructure.Services
 {
-    public interface IAuthService
-    {
-        Task<AuthResponse> RegisterAsync(RegisterRequest request);
-        Task<AuthResponse> LoginAsync(LoginRequest request);
-    }
+
 
     public class AuthService : IAuthService
     {
