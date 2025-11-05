@@ -6,6 +6,9 @@ using WebAnalytics.Infrastructure.Services;
 
 namespace WebAnalytics.API.Controllers
 {
+    /// <summary>
+    /// Provides analytics reports and insights
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -20,6 +23,10 @@ namespace WebAnalytics.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Get overall analytics overview report
+        /// </summary>
+        /// <returns>Summary of key metrics and performance indicators</returns>
         [HttpGet("overview")]
         public async Task<ActionResult<OverviewReport>> GetOverview()
         {
@@ -35,6 +42,10 @@ namespace WebAnalytics.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Get detailed reports for all pages
+        /// </summary>
+        /// <returns>List of page performance reports</returns>
         [HttpGet("pages")]
         public async Task<ActionResult<List<PageReport>>> GetPages()
         {
