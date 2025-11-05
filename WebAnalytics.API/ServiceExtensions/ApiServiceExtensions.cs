@@ -6,6 +6,7 @@
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.OpenApi.Models;
     using Swashbuckle.AspNetCore.SwaggerGen;
+    using System.Reflection;
     using System.Text;
 
     public static class ApiServiceExtensions
@@ -32,6 +33,10 @@
                 Description = "Professional Web Analytics API"
             });
 
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            options.IncludeXmlComments(xmlPath);
+
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = "JWT Authorization header using the Bearer scheme.",
@@ -42,21 +47,20 @@
             });
 
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
+            new OpenApiSecurityScheme
             {
-                new OpenApiSecurityScheme
+                Reference = new OpenApiReference
                 {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                Array.Empty<string>()
-            }
-        });
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
-
+    });
+        }
         private static void ConfigureAuthentication(AuthenticationOptions options)
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

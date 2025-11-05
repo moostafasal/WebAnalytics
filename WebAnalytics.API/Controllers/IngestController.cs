@@ -4,6 +4,9 @@ using WebAnalytics.Infrastructure.Services;
 
 namespace WebAnalytics.API.Controllers
 {
+    /// <summary>
+    /// Handles data ingestion operations from various sources including Google Analytics and PageSpeed Insights
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class IngestController : ControllerBase
@@ -16,7 +19,26 @@ namespace WebAnalytics.API.Controllers
             _dataIngestionService = dataIngestionService;
             _logger = logger;
         }
-
+        /// <summary>
+        /// Triggers data ingestion process from Google Analytics and PageSpeed Insights JSON files
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     POST /api/ingest/trigger
+        ///     {
+        ///         "note": "This endpoint automatically processes mock data files"
+        ///     }
+        /// 
+        /// This endpoint:
+        /// - Reads Google Analytics data from MockData/google-analytics.json
+        /// - Reads PageSpeed Insights data from MockData/pagespeed.json
+        /// - Processes and stores the data in the database
+        /// - Returns processing status and timestamp
+        /// </remarks>
+        /// <response code="200">Data processed successfully</response>
+        /// <response code="500">Internal server error or data processing failed</response>
+        /// <returns>Ingestion process result with status and timestamp</returns>
         [HttpPost("trigger")]
         public async Task<IActionResult> TriggerIngestion()
         {
