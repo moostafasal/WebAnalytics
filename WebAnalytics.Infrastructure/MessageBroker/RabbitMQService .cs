@@ -34,7 +34,6 @@ namespace WebAnalytics.Infrastructure.MessageBroker
 
         private void SetupInfrastructure()
         {
-            // Direct Exchange instead of Fanout
             _channel.ExchangeDeclare(
                 exchange: "analytics.raw",
                 type: ExchangeType.Direct,

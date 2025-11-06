@@ -28,7 +28,7 @@ namespace WebAnalytics.Consumer
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("🚀 Worker started receiving data from RabbitMQ");
+            _logger.LogInformation(" Worker started receiving data from RabbitMQ");
 
             _rabbitMQService.StartConsuming("analytics.raw.q", async message =>
             {
@@ -47,7 +47,7 @@ namespace WebAnalytics.Consumer
                     sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
                     onRetry: (exception, timeSpan, attempt, context) =>
                     {
-                        _logger.LogWarning(exception, "🔄 Attempt {Attempt} failed, retrying in {Seconds} seconds", attempt, timeSpan.TotalSeconds);
+                        _logger.LogWarning(exception, "Attempt {Attempt} failed, retrying in {Seconds} seconds", attempt, timeSpan.TotalSeconds);
                     });
 
             await retryPolicy.ExecuteAsync(async () =>
@@ -61,8 +61,6 @@ namespace WebAnalytics.Consumer
         {
             _logger.LogInformation("📨 Received message: {MessageLength} characters", message.Length);
 
-            // 👇 أضف السطر ده هنا قبل أي Deserialize
-            _logger.LogError("📦 RAW MESSAGE: " + message);
 
             try
             {
@@ -82,7 +80,7 @@ namespace WebAnalytics.Consumer
                     throw new Exception("Invalid message format - cannot deserialize");
                 }
 
-                _logger.LogInformation("🔍 Processing: {Page} - {Date:yyyy-MM-dd} - LCPms: {LCPms}",
+                _logger.LogInformation("Processing: {Page} - {Date:yyyy-MM-dd} - LCPms: {LCPms}",
                     analyticsMessage.Page, analyticsMessage.Date, analyticsMessage.LCPms);
 
                 using var scope = _serviceProvider.CreateScope();
