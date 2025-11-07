@@ -40,7 +40,7 @@ A robust backend system that ingests web analytics data from multiple sources, p
 
 - **Backend**: .NET 8, ASP.NET Core Web API
 - **Database**:postgresql with Entity Framework Core
-- **Message Broker**: RabbitMQ 3.12 with Management Plugin
+- **Message Broker**: RabbitMQ
 - **Authentication**: JWT Bearer Tokens
 - **Resilience**: Polly for retry policies + Dead Letter Queue
 - **Documentation**: Swagger/OpenAPI
