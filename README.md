@@ -22,7 +22,7 @@ A robust backend system that ingests web analytics data from multiple sources, p
                                                   │
                                                   ▼
 ┌─────────────┐      ┌──────────────┐      ┌────────────┐
-│  Report API │ ◀─── │   SQL Server │ ◀─── │  Consumer  │
+│  Report API │ ◀─── │   postgresql │ ◀─── │  Consumer  │
 │  (JWT Auth) │      │   Database   │      │  Worker    │
 └─────────────┘      └──────────────┘      └────────────┘
 ```
@@ -31,7 +31,7 @@ A robust backend system that ingests web analytics data from multiple sources, p
 1. **Ingestion**: API reads Google Analytics + PageSpeed JSON files
 2. **Publishing**: Combined records published to RabbitMQ exchange
 3. **Processing**: Background consumer reads from queue with retry logic
-4. **Aggregation**: Daily statistics calculated and stored in SQL Server
+4. **Aggregation**: Daily statistics calculated and stored in postgresql
 5. **Reporting**: Authenticated users query aggregated data via REST APIs
 
 ---
@@ -39,7 +39,7 @@ A robust backend system that ingests web analytics data from multiple sources, p
 ## 🛠️ Tech Stack
 
 - **Backend**: .NET 8, ASP.NET Core Web API
-- **Database**: SQL Server 2022 with Entity Framework Core
+- **Database**:postgresql with Entity Framework Core
 - **Message Broker**: RabbitMQ 3.12 with Management Plugin
 - **Authentication**: JWT Bearer Tokens
 - **Resilience**: Polly for retry policies + Dead Letter Queue
@@ -65,7 +65,7 @@ docker-compose up -d --build
 ```
 
 This command starts:
-- **SQL Server** on port `1433`
+- **postgresql** on port `5432`
 - **RabbitMQ** on port `5672` (Management UI on `15672`)
 - **API** on port `5000`
 - **Consumer** (background service)
