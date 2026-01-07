@@ -248,10 +248,5 @@ docker-compose down -v     # Stop and remove volumes (clears data)
 
 ---
 
-## 🙏 Acknowledgments
-
-Built as a technical assessment for **ElectroPi**  
-Demonstrates: .NET 8, RabbitMQ, Docker, JWT, EF Core, Polly
-
 ---
 
